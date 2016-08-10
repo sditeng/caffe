@@ -273,7 +273,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 163 (last added: batch_reduction_param)
+// LayerParameter next available layer-specific ID: 164 (last added: merge_batch_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -361,6 +361,7 @@ message LayerParameter {
   optional ScaleParameter scale_param = 160;
   optional BiasParameter bias_param = 161;
   optional BatchReductionParameter batch_reduction_param = 162;
+  optional MergeBatchParameter merge_batch_param = 163;
 }
 
 // Message that stores parameters used to apply transformation
@@ -573,6 +574,17 @@ message EltwiseParameter {
   optional bool stable_prod_grad = 3 [default = true];
 }
 
+message MergeBatchParameter {
+  enum MergeOp {
+    SUM = 1;
+    MAX = 2;
+    MEAN = 3;
+  }
+  optional bool ignore_blob = 1; // The number of context boxes per example
+  optional MergeOp operation = 2 [default = SUM];
+}
+
+// Message that stores parameters used by MILLayer
 message ExpParameter {
   // ExpLayer computes outputs y = base ^ (shift + scale * x), for base > 0.
   // Or if base is set to the default (-1), base is set to e,

@@ -1,6 +1,6 @@
 classdef Solver < handle
   % Wrapper class of caffe::SGDSolver in matlab
-  
+
   properties (Access = private)
     hSolver_self
     attributes
@@ -12,7 +12,7 @@ classdef Solver < handle
     net
     test_nets
   end
-  
+
   methods
     function self = Solver(varargin)
       % decide whether to construct a solver from solver_file or handle
@@ -24,17 +24,20 @@ classdef Solver < handle
       % construct a solver from handle
       hSolver_solver = varargin{1};
       CHECK(is_valid_handle(hSolver_solver), 'invalid Solver handle');
-      
+
       % setup self handle and attributes
       self.hSolver_self = hSolver_solver;
       self.attributes = caffe_('solver_get_attr', self.hSolver_self);
-      
+
       % setup net and test_nets
       self.net = caffe.Net(self.attributes.hNet_net);
       self.test_nets = caffe.Net.empty();
       for n = 1:length(self.attributes.hNet_test_nets)
         self.test_nets(n) = caffe.Net(self.attributes.hNet_test_nets(n));
       end
+    end
+    function max_iter = max_iter(self)
+      max_iter = caffe_('solver_get_max_iter', self.hSolver_self);
     end
     function iter = iter(self)
       iter = caffe_('solver_get_iter', self.hSolver_self);
@@ -51,6 +54,14 @@ classdef Solver < handle
       CHECK(isscalar(iters) && iters > 0, 'iters must be positive integer');
       iters = double(iters);
       caffe_('solver_step', self.hSolver_self, iters);
+    end
+    function clear_param_diff(self)
+        caffe_('solver_clear_param_diff', self.hSolver_self);
+    end
+    function update_itersize(self, iter_size)
+      CHECK(isscalar(iter_size) && iter_size > 0, 'iter_size must be positive integer');
+      iters = double(iter_size);
+      caffe_('solver_update_itersize', self.hSolver_self, iter_size);
     end
   end
 end

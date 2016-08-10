@@ -117,6 +117,8 @@ class Net {
   }
   /// @brief returns the phase: TRAIN or TEST
   inline Phase phase() const { return phase_; }
+  /// @brief enable train and test with one network, for saving memory
+  void SetPhase(Phase phase);
   /**
    * @brief returns the bottom vecs for each layer -- usually you won't
    *        need this unless you do per-layer checks such as gradients.
@@ -130,6 +132,12 @@ class Net {
    */
   inline const vector<vector<Blob<Dtype>*> >& top_vecs() const {
     return top_vecs_;
+  }
+  inline const vector<vector<int> >& bottom_id_vecs() const {
+    return bottom_id_vecs_;
+  }
+  inline const vector<vector<int> >& top_id_vecs() const {
+    return top_id_vecs_;
   }
   inline const vector<vector<bool> >& bottom_need_backward() const {
     return bottom_need_backward_;

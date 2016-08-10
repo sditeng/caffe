@@ -78,6 +78,14 @@ class Layer {
   }
 
   /**
+  * @brief set phase
+  *      enable train and test with one network, for saving memory
+  */
+  virtual inline void set_phase(Phase phase){
+    phase_ = phase;
+  }
+
+  /**
    * @brief Does layer-specific setup: your layer should implement this function
    *        as well as Reshape.
    *

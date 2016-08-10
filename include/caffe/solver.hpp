@@ -37,6 +37,9 @@ class Solver {
     return test_nets_;
   }
   int iter() { return iter_; }
+  virtual void Update_for_itersize(int iter_size) = 0;
+  inline const int max_iter() const { return param_.max_iter(); }
+  void ClearParamDiffs();
 
  protected:
   // Make and apply the update value for the current iteration.
@@ -83,6 +86,7 @@ class SGDSolver : public Solver<Dtype> {
       : Solver<Dtype>(param_file) { PreSolve(); }
 
   const vector<shared_ptr<Blob<Dtype> > >& history() { return history_; }
+  virtual void Update_for_itersize(int iter_size);
 
  protected:
   void PreSolve();

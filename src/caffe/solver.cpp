@@ -164,17 +164,8 @@ void Solver<Dtype>::InitTestNets() {
 }
 
 template <typename Dtype>
-void Solver<Dtype>::Step(int iters) {
-  vector<Blob<Dtype>*> bottom_vec;
-  const int start_iter = iter_;
-  const int stop_iter = iter_ + iters;
-  int average_loss = this->param_.average_loss();
-  vector<Dtype> losses;
-  Dtype smoothed_loss = 0;
-
-  while (iter_ < stop_iter) {
-    // zero-init the params
-    for (int i = 0; i < net_->params().size(); ++i) {
+void Solver<Dtype>::ClearParamDiffs() {
+  for (int i = 0; i < net_->params().size(); ++i) {
       shared_ptr<Blob<Dtype> > blob = net_->params()[i];
       switch (Caffe::mode()) {
       case Caffe::CPU:
@@ -191,6 +182,20 @@ void Solver<Dtype>::Step(int iters) {
         break;
       }
     }
+}
+
+template <typename Dtype>
+void Solver<Dtype>::Step(int iters) {
+  vector<Blob<Dtype>*> bottom_vec;
+  const int start_iter = iter_;
+  const int stop_iter = iter_ + iters;
+  int average_loss = this->param_.average_loss();
+  vector<Dtype> losses;
+  Dtype smoothed_loss = 0;
+
+  while (iter_ < stop_iter) {
+    // zero-init the params
+    ClearParamDiffs();
 
     if (param_.test_interval() && iter_ % param_.test_interval() == 0
         && (iter_ > 0 || param_.test_initialization())) {
@@ -662,6 +667,53 @@ void SGDSolver<Dtype>::Normalize(int param_id) {
   }
   default:
     LOG(FATAL) << "Unknown caffe mode: " << Caffe::mode();
+  }
+}
+
+template <typename Dtype>
+void SGDSolver<Dtype>::Update_for_itersize(int iter_size) {
+  Dtype rate = GetLearningRate();
+  if (this->param_.display() && this->iter_ % this->param_.display() == 0) {
+    LOG(INFO) << "Iteration " << this->iter_ << ", lr = " << rate;
+  }
+
+  ClipGradients();
+
+  for (int param_id = 0; param_id < this->net_->params().size(); ++param_id) {
+    // Normalize
+    if (iter_size > 1) {
+      const vector<shared_ptr<Blob<Dtype> > >& net_params = this->net_->params();
+      const Dtype accum_normalization = Dtype(1.) / Dtype(iter_size);
+      switch (Caffe::mode()) {
+        case Caffe::CPU: {
+          caffe_scal(net_params[param_id]->count(), accum_normalization,
+            net_params[param_id]->mutable_cpu_diff());
+          break;
+        }
+        case Caffe::GPU: {
+          #ifndef CPU_ONLY
+          caffe_gpu_scal(net_params[param_id]->count(), accum_normalization,
+            net_params[param_id]->mutable_gpu_diff());
+          #else
+          NO_GPU;
+          #endif
+          break;
+        }
+        default:
+          LOG(FATAL) << "Unknown caffe mode: " << Caffe::mode();
+      }
+    }
+    Regularize(param_id);
+    ComputeUpdateValue(param_id, rate);
+  }
+  this->net_->Update();
+  // Increment the internal iter_ counter -- its value should always indicate
+  // the number of times the weights have been updated.
+  this->iter_ += 1;
+
+  // Save a snapshot if needed.
+  if (this->param_.snapshot() && this->iter_ % this->param_.snapshot() == 0) {
+    this->Snapshot();
   }
 }
 

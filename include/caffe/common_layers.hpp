@@ -185,6 +185,39 @@ class EltwiseLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief Merge multiple input Blobs along 0axis,
+ *
+ * TODO(dox): thorough documentation for Forward, Backward, and proto params.
+ */
+template <typename Dtype>
+class MergeBatchLayer : public Layer<Dtype>{
+  public:
+    explicit MergeBatchLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+    virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+    virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+    virtual inline int ExactNumTopBlobs() const { return 1; }
+    virtual inline int MinNumBottomBlobs() const {return 2; }
+    virtual inline const char* type() const { return "Sum"; }
+
+  protected:
+    virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+    virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+    virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+    virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+    bool ignore_blob_;
+    MergeBatchParameter_MergeOp op_;
+    int num_batches_, num_data_blob_;
+};
+
+/**
  * @brief Takes two+ Blobs, interprets last Blob as a selector and
  *  filter remaining Blobs accordingly with selector data (0 means that
  * the corresponding item has to be filtered, non-zero means that corresponding
