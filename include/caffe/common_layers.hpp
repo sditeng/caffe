@@ -218,6 +218,45 @@ class MergeBatchLayer : public Layer<Dtype>{
 };
 
 /**
+ * @brief weighted sum of input groups sliced by specified axis
+ *
+ *    For axis = 1 (default), given an input of Nx(groupxK0)xHxW, compute output of
+ *    NxK0xHxW, where each K0xHxW is a weighted sum of (groupXx0)xHxW and learned
+ *    weights are groupxC0, bias is group
+ */
+template <typename Dtype>
+class WeightedSumLayer : public Layer<Dtype> {
+ public:
+  explicit WeightedSumLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "InnerProduct"; }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  int channel_in_;
+  int channel_out_; //K0
+  int group_;
+  int axis_;
+  int inner_size_; //HxW
+  bool bias_term_;
+};
+
+/**
  * @brief Takes two+ Blobs, interprets last Blob as a selector and
  *  filter remaining Blobs accordingly with selector data (0 means that
  * the corresponding item has to be filtered, non-zero means that corresponding

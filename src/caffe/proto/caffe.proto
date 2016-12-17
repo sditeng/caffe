@@ -273,7 +273,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 164 (last added: merge_batch_param)
+// LayerParameter next available layer-specific ID: 165 (last added: weighted_sum_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -362,6 +362,7 @@ message LayerParameter {
   optional BiasParameter bias_param = 161;
   optional BatchReductionParameter batch_reduction_param = 162;
   optional MergeBatchParameter merge_batch_param = 163;
+  optional WeightedSumParameter weighted_sum_param = 164;
 }
 
 // Message that stores parameters used to apply transformation
@@ -582,6 +583,18 @@ message MergeBatchParameter {
   }
   optional bool ignore_blob = 1; // The number of context boxes per example
   optional MergeOp operation = 2 [default = SUM];
+}
+
+message WeightedSumParameter {
+  optional bool bias_term = 2 [default = true]; // whether to have bias terms
+  optional FillerParameter weight_filler = 3; // The filler for the weight
+  optional FillerParameter bias_filler = 4; // The filler for the bias
+
+  // The first axis to be lumped into a single inner product computation;
+  // all preceding axes are retained in the output.
+  // May be negative to index from the end (e.g., -1 for the last axis).
+  optional int32 axis = 5 [default = 1];
+  optional int32 group = 6 [default = 1];
 }
 
 // Message that stores parameters used by MILLayer
